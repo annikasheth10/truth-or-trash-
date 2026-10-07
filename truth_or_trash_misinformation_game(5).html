@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Truth or Trash — Misinformation Awareness Game</title>
+<style>
+  :root{
+    --ink:#182033; --muted:#5d6475; --paper:#fffdf8; --card:#ffffff;
+    --purple:#7057d9; --pink:#ff5d8f; --blue:#48a9e8; --green:#45c486;
+    --yellow:#ffd65a; --red:#ef6461; --line:#e7e4ef;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:
+    radial-gradient(circle at 10% 10%,#e8ddff 0,transparent 28%),
+    radial-gradient(circle at 90% 20%,#d9f5ff 0,transparent 28%),
+    #f7f5ff;color:var(--ink);min-height:100vh}
+  button{font:inherit}
+  .game{max-width:1050px;margin:auto;padding:22px}
+  .topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px}
+  .logo{font-weight:900;font-size:22px;letter-spacing:-.5px}
+  .stats{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+  .pill{background:#fff;border:2px solid var(--line);border-radius:999px;padding:8px 13px;font-weight:800}
+  .screen{background:rgba(255,255,255,.94);border:2px solid var(--line);border-radius:28px;padding:30px;box-shadow:0 14px 40px rgba(38,30,80,.08)}
+  .hidden{display:none!important}
+  h1{font-size:clamp(38px,7vw,70px);line-height:.95;margin:8px 0 16px;letter-spacing:-3px}
+  h2{font-size:32px;margin:5px 0 12px}
+  h3{margin:0 0 8px}
+  p{line-height:1.55}
+  .hero{display:grid;grid-template-columns:1.25fr .75fr;gap:25px;align-items:center}
+  .tag{display:inline-block;background:#ece7ff;color:#503ab1;font-weight:900;border-radius:999px;padding:8px 12px}
+  .start-card{background:linear-gradient(135deg,#7057d9,#a56be8);color:white;border-radius:24px;padding:24px;transform:rotate(1deg)}
+  .start-card .mini{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:15px}
+  .mini div{background:rgba(255,255,255,.16);padding:14px;border-radius:16px}
+  .btn{border:0;border-radius:15px;padding:13px 18px;font-weight:900;cursor:pointer;transition:.15s;box-shadow:0 5px 0 rgba(0,0,0,.1)}
+  .btn:hover{transform:translateY(-2px)}
+  .btn:active{transform:translateY(2px);box-shadow:0 2px 0 rgba(0,0,0,.1)}
+  .primary{background:var(--ink);color:white}.yes{background:#bff0d7;color:#155f3c}.no{background:#ffd0d0;color:#8a2727}
+  .next{background:var(--purple);color:white}.ghost{background:white;border:2px solid var(--line);box-shadow:none}
+  .choices{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:20px}
+  .choice{min-height:110px;text-align:left;background:white;border:3px solid var(--line);border-radius:20px;padding:18px;cursor:pointer}
+  .choice:hover{border-color:#b7acee}
+  .choice.selected{border-color:var(--purple);background:#f2efff}
+  .question-meta{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;color:var(--muted);font-weight:800}
+  .question-card{background:#fff;border:2px solid var(--line);border-radius:22px;padding:22px;margin-top:18px}
+  .fake-post{border:2px solid #dedbe8;border-radius:18px;padding:18px;background:#fff}
+  .fake-img{height:190px;border-radius:14px;background:linear-gradient(135deg,#ffd96a,#ff7fa4 50%,#8e72ed);display:grid;place-items:center;font-size:62px;margin-bottom:15px}
+  .source{background:#f2fbf6;border-left:5px solid var(--green);padding:13px 15px;border-radius:10px;margin-top:14px}
+  .feedback{margin-top:16px;padding:17px;border-radius:17px;background:#f4f1ff}
+  .feedback.good{background:#e7faef}.feedback.bad{background:#fff0f0}
+  .block-area{background:#f1eff9;border-radius:20px;padding:18px;margin:18px 0}
+  .grid{display:grid;grid-template-columns:repeat(8,1fr);gap:5px;max-width:560px;margin:12px auto}
+  .block{aspect-ratio:1;background:#d9d5e5;border-radius:6px}
+  .block.filled{background:var(--purple)}
+  .block.special{background:var(--yellow)}
+  .story{background:#fff;border:2px solid var(--line);border-radius:20px;padding:22px}
+  .story-choice{display:block;width:100%;margin:10px 0;text-align:left;border:2px solid var(--line);background:#fff;border-radius:15px;padding:14px;cursor:pointer}
+  .story-choice:hover{border-color:var(--blue);background:#f2fbff}
+  .retry{background:#eef8ff;border:2px dashed #75bce8;padding:15px;border-radius:16px;margin-top:15px}
+  .memory-feed{max-width:650px;margin:auto;background:#edf0f7;border-radius:20px;padding:15px;height:430px;overflow:auto}
+  .post{background:#fff;border-radius:16px;padding:15px;margin-bottom:12px;border:1px solid #ddd}
+  .post .name{font-weight:900}.post .small{font-size:12px;color:#777}.post .emoji{font-size:28px}
+  .memory-q{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .score-big{text-align:center;font-size:70px;font-weight:950;color:var(--purple);margin:10px}
+  .final-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:20px 0}
+  .metric{background:#f6f4fb;border-radius:17px;padding:18px;text-align:center}
+  .metric strong{font-size:28px;display:block}
+  .tiny{font-size:13px;color:var(--muted)}
+  @media(max-width:760px){
+    .hero{grid-template-columns:1fr}.screen{padding:20px}
+    .choices,.memory-q{grid-template-columns:1fr}.grid{grid-template-columns:repeat(8,1fr)}
+    h1{font-size:50px}
+  }
+</style>
+</head>
+<body>
+<div class="game">
+  <div class="topbar">
+    <div class="logo">🧠 TRUTH OR TRASH</div>
+    <div class="stats">
+      <div class="pill">⭐ <span id="score">0</span></div>
+      <div class="pill">🔥 <span id="streak">0</span></div>
+      <div class="pill">🔑 <span id="keys">0</span></div>
+    </div>
+  </div>
+
+  <section id="home" class="screen">
+    <div class="hero">
+      <div>
+        <span class="tag">MISINFORMATION AWARENESS GAME</span>
+        <h1>Can you tell what's real?</h1>
+        <p>AI can make convincing images. Posts can spread before anyone checks them. Your brain can also remember information differently than someone else's.</p>
+        <p><b>Beat all 4 challenges:</b> spot misinformation, build blocks, make choices, and test your memory.</p>
+        <button class="btn primary" onclick="startGame()">START GAME →</button>
+      </div>
+      <div class="start-card">
+        <h2>🎮 Your mission</h2>
+        <p>Think before you share. Check the evidence. Notice how your own memory and choices can affect what you believe.</p>
+        <div class="mini">
+          <div>📰<br><b>Spot it</b></div>
+          <div>🧱<br><b>Build it</b></div>
+          <div>🧭<br><b>Choose it</b></div>
+          <div>👀<br><b>Remember it</b></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="level1" class="screen hidden">
+    <div class="question-meta"><span>LEVEL 1 • SPOT THE FAKE</span><span>Question <span id="qnum">1</span>/4</span></div>
+    <h2>True or Trash?</h2>
+    <p>Look at the post, decide what you think, then check the evidence.</p>
+    <div id="factArea"></div>
+    <div id="factFeedback"></div>
+  </section>
+
+  <section id="level2" class="screen hidden">
+    <div class="question-meta"><span>LEVEL 2 • BLOCK BLAST</span><span>Question <span id="bnum">1</span>/4</span></div>
+    <h2>Answer → place a block 🧱</h2>
+    <p>Correct answers earn more points and let you fill your board. Use your keys to unlock bonus blocks.</p>
+    <div class="block-area">
+      <div class="grid" id="blockGrid"></div>
+      <p style="text-align:center"><b id="blockCount">0</b>/32 blocks placed</p>
+    </div>
+    <div id="blockQuestion"></div>
+    <div id="blockFeedback"></div>
+  </section>
+
+  <section id="level3" class="screen hidden">
+    <div class="question-meta"><span>LEVEL 3 • YOUR CHOICE</span><span>Story <span id="storyStep">1</span>/4</span></div>
+    <h2>The Algorithm Maze 🧭</h2>
+    <div id="storyArea" class="story"></div>
+  </section>
+
+  <section id="level4" class="screen hidden">
+    <div class="question-meta"><span>LEVEL 4 • MEMORY CHALLENGE</span><span>Posts to remember: 10</span></div>
+    <h2>What actually stuck? 👀</h2>
+    <div id="memoryArea"></div>
+  </section>
+
+  <section id="final" class="screen hidden">
+    <span class="tag">GAME COMPLETE</span>
+    <h2>Your misinformation-awareness score</h2>
+    <div class="score-big" id="finalScore">0</div>
+    <p style="text-align:center" id="finalMessage"></p>
+    <div class="final-grid">
+      <div class="metric"><strong id="finalCorrect">0</strong>correct answers</div>
+      <div class="metric"><strong id="finalBlocks">0</strong>blocks placed</div>
+      <div class="metric"><strong id="finalKeys">0</strong>keys earned</div>
+    </div>
+    <div class="source">
+      <b>Keep checking:</b> For real-world claims, look for primary sources, established news organizations, scientific organizations, and transparent evidence. Useful starting points include the <a href="https://www.ftc.gov/news-events/topics/truth-advertising" target="_blank">FTC</a>, <a href="https://www.apa.org/topics/social-media-internet" target="_blank">American Psychological Association</a>, and <a href="https://c2pa.org/" target="_blank">C2PA</a>.
+    </div>
+    <br>
+    <button class="btn primary" onclick="location.reload()">PLAY AGAIN ↻</button>
+  </section>
+</div>
+
+<script>
+const facts = [
+ {claim:"A viral post says: “AI images are always easy to spot because they have obvious weird fingers.”",answer:false,
+  why:"Not reliable. AI-generated images have become much better, and some can look realistic. Visual clues can help, but they are not proof by themselves.",
+  source:"MIT Media Lab / research on synthetic media and detection: https://www.media.mit.edu/"},
+ {claim:"A post says: “If a screenshot has a lot of likes and shares, that proves the information is true.”",answer:false,
+  why:"Popularity is not evidence. False information can spread widely, especially when content is surprising, emotional, or easy to share.",
+  source:"U.S. Surgeon General — Social Media and Youth Mental Health: https://www.hhs.gov/surgeongeneral/priorities/youth-mental-health/social-media/index.html"},
+ {claim:"A post says: “You should check the original source before trusting a screenshot of a news headline.”",answer:true,
+  why:"Yes. A screenshot can leave out context or be edited. Finding the original article lets you check its date, author, evidence, and wording.",
+  source:"Library of Congress — Evaluating Sources: https://guides.loc.gov/evaluating-resources"},
+ {claim:"A post says: “A confident-sounding AI answer is automatically a reliable source.”",answer:false,
+  why:"AI systems can produce incorrect information while sounding confident. Important claims should be checked against trustworthy sources.",
+  source:"NIST — Artificial Intelligence Risk Management Framework: https://www.nist.gov/itl/ai-risk-management-framework"}
+];
+
+const blocks = [
+ {q:"What should you do with a surprising headline?", opts:["Share it immediately","Only read the comments","Pause and verify it"], a:2},
+ {q:"Which clue is most useful when checking a news story?", opts:["Who published it and what evidence it gives","How angry it makes you","How many emojis it has"], a:0},
+ {q:"What can an AI-generated image tell you by itself?", opts:["Everything about the event","Only what appears visually; context still needs checking","That the event definitely happened"], a:1}
+];
+
+let state={score:0,streak:0,keys:0,correct:0,blocks:0};
+function show(id){document.querySelectorAll(".screen").forEach(x=>x.classList.add("hidden"));document.getElementById(id).classList.remove("hidden")}
+function updateStats(){
+ document.getElementById("score").textContent=state.score;
+ document.getElementById("streak").textContent=state.streak;
+ document.getElementById("keys").textContent=state.keys;
+}
+function award(correct,pts=100){
+ if(correct){state.correct++;state.streak++;state.score+=pts+Math.max(0,(state.streak-1)*20);if(state.streak%2===0)state.keys++}
+ else state.streak=0;
+ updateStats();
+}
+function startGame(){show("level1");renderFact(0)}
+function renderFact(i){
+ document.getElementById("qnum").textContent=i+1;
+ const f=facts[i];
+ document.getElementById("factArea").innerHTML=`
+  <div class="question-card">
+   <div class="fake-post">
+    <div class="fake-img">${i%2?"📱":"🖼️"}</div>
+    <h3>VIRAL POST</h3><p>${f.claim}</p>
+   </div>
+   <div class="choices">
+    <button class="choice" onclick="answerFact(${i},true)">✅ YES — I think it's TRUE</button>
+    <button class="choice" onclick="answerFact(${i},false)">🚫 NO — I think it's FALSE</button>
+   </div>
+  </div>`;
+ document.getElementById("factFeedback").innerHTML="";
+}
+const retryState={};
+function answerFact(i,choice){
+ const f=facts[i], correct=choice===f.answer;
+ retryState.fact=retryState.fact||{};
+ const used=!!retryState.fact[i];
+
+ if(correct){
+   award(true,120);
+   document.getElementById("factFeedback").innerHTML=`
+    <div class="feedback good">
+     <b>🎉 Nice check!</b>
+     <p>${f.why}</p>
+     <div class="source"><b>Credible source:</b> ${f.source}</div>
+     <br><button class="btn next" onclick="${i<facts.length-1?`renderFact(${i+1})`:`startBlocks()`}">${i<facts.length-1?"NEXT →":"GO TO BLOCK BLAST →"}</button>
+    </div>`;
+ } else if(!used){
+   retryState.fact[i]=true;
+   document.getElementById("factFeedback").innerHTML=`
+    <div class="feedback bad">
+     <b>🧐 Not quite — try once more!</b>
+     <p>You get one second try. Look closely at the claim and think about whether the evidence really supports it.</p>
+     <button class="btn next" onclick="renderFact(${i})">TRY AGAIN →</button>
+    </div>`;
+ } else {
+   award(false,120);
+   document.getElementById("factFeedback").innerHTML=`
+    <div class="feedback bad">
+     <b>📚 The answer was ${f.answer?"TRUE":"FALSE"}.</b>
+     <p>${f.why}</p>
+     <div class="source"><b>Credible source:</b> ${f.source}</div>
+     <br><button class="btn next" onclick="${i<facts.length-1?`renderFact(${i+1})`:`startBlocks()`}">${i<facts.length-1?"NEXT →":"GO TO BLOCK BLAST →"}</button>
+    </div>`;
+ }
+}
+function startBlocks(){show("level2");buildGrid();renderBlock(0)}
+function buildGrid(){
+ const g=document.getElementById("blockGrid");g.innerHTML="";
+ for(let i=0;i<32;i++){let d=document.createElement("div");d.className="block";d.id="cell"+i;g.appendChild(d)}
+}
+function renderBlock(i){
+ document.getElementById("bnum").textContent=i+1;
+ const b=blocks[i];
+ document.getElementById("blockQuestion").innerHTML=`<div class="question-card"><h3>${b.q}</h3><div class="choices">${b.opts.map((o,j)=>`<button class="choice" onclick="answerBlock(${i},${j})">${String.fromCharCode(65+j)}. ${o}</button>`).join("")}</div></div>`;
+ document.getElementById("blockFeedback").innerHTML="";
+}
+function answerBlock(i,j){
+ const correct=j===blocks[i].a;
+ retryState.block=retryState.block||{};
+ const used=!!retryState.block[i];
+
+ if(correct){
+   award(true,130);
+   if(state.blocks<32){document.getElementById("cell"+state.blocks).classList.add("filled");state.blocks++}
+   document.getElementById("blockCount").textContent=state.blocks;
+   document.getElementById("blockFeedback").innerHTML=`
+    <div class="feedback good">
+     <b>🧱 Block placed!</b>
+     <p>You earned points and added a block.</p>
+     ${i<blocks.length-1?`<button class="btn next" onclick="renderBlock(${i+1})">NEXT →</button>`:`<button class="btn next" onclick="startStory()">CONTINUE →</button>`}
+    </div>`;
+ } else if(!used){
+   retryState.block[i]=true;
+   document.getElementById("blockFeedback").innerHTML=`
+    <div class="feedback bad">
+     <b>🔄 Not quite — one more try!</b>
+     <p>Think about which option focuses on evidence instead of popularity, emotion, or assumptions.</p>
+     <button class="btn next" onclick="renderBlock(${i})">TRY AGAIN →</button>
+    </div>`;
+ } else {
+   award(false,130);
+   document.getElementById("blockFeedback").innerHTML=`
+    <div class="feedback bad">
+     <b>📚 The correct answer was ${blocks[i].opts[blocks[i].a]}.</b>
+     <p>Keep going — the goal is to practice the thinking skill, not just get every question right.</p>
+     ${i<blocks.length-1?`<button class="btn next" onclick="renderBlock(${i+1})">NEXT →</button>`:`<button class="btn next" onclick="startStory()">CONTINUE →</button>`}
+    </div>`;
+ }
+}
+const story=[
+ {text:"You see a post claiming that a new AI tool can perfectly predict a person's personality from one selfie. What do you do first?",opts:["Share it because the claim sounds impressive.","Look for the original study or evidence behind the claim.","Ask an AI chatbot if it is true."],good:1,explain:"Strong move: check the underlying evidence instead of accepting the claim at face value."},
+ {text:"You find a study, but the post's caption makes a much bigger claim than the study itself. What next?",opts:["Read the study's actual conclusion and limitations.","Trust the caption because it summarizes the study.","Ignore the study completely."],good:0,explain:"The original source gives you context that a social post may leave out."},
+ {text:"The comments are split. Half say the claim is fake and half say it is definitely true. What should decide your next step?",opts:["Whichever side has more comments.","Your first emotional reaction.","The quality of evidence from trustworthy sources."],good:2,explain:"Comments show reactions, not necessarily evidence."},
+ {text:"You still aren't sure. What is the most responsible choice?",opts:["Say you are unsure and keep checking.","Post the claim anyway with 'I heard this might be true.'","Make the headline more dramatic so people will click."],good:0,explain:"Uncertainty is okay. You do not have to share something before you know whether it is accurate."}
+];
+function startStory(){show("level3");renderStory(0)}
+function renderStory(i){
+ document.getElementById("storyStep").textContent=i+1;
+ const s=story[i];
+ document.getElementById("storyArea").innerHTML=`<p>${s.text}</p>${s.opts.map((o,j)=>`<button class="story-choice" onclick="storyChoice(${i},${j})">${o}</button>`).join("")}`;
+}
+function storyChoice(i,j){
+ const s=story[i],good=j===s.good;award(good,150);
+ document.getElementById("storyArea").innerHTML=`<div class="feedback ${good?"good":"bad"}"><h3>${good?"🧠 Smart move!":"🔄 Try again!"}</h3><p>${good?s.explain:"That choice could make misinformation easier to accept or spread. You can retry this decision."}</p>${good?`<button class="btn next" onclick="${i<story.length-1?`renderStory(${i+1})`:`startMemory()`}">${i<story.length-1?"NEXT CHOICE →":"MEMORY CHALLENGE →"}</button>`:`<div class="retry"><b>Your choice changes what happens next.</b><br>Try another option.</div>`}</div>`;
+}
+const memoryPosts=[
+ ["Maya","The sky looks wild today!","🌈"],["Jordan","A study says sleep can affect learning and memory.","🧠"],["Sam","This photo proves this celebrity was at the event.","📸"],["Riley","My favorite snack is popcorn.","🍿"],["Alex","A headline without a source can be misleading.","📰"],["Casey","AI can create convincing synthetic images.","🤖"],["Taylor","Drinking water is important for normal body function.","💧"],["Morgan","This post has 2 million likes, so it must be true.","❤️"],["Jamie","Checking the original source can reveal missing context.","🔎"],["Avery","My dog learned a new trick today.","🐶"]
+];
+function startMemory(){show("level4");renderMemoryFeed()}
+function renderMemoryFeed(){
+ document.getElementById("memoryArea").innerHTML=`<p>Scroll through the feed. You will get questions after you finish. Try to notice both the facts and the distracting details.</p>
+ <div class="memory-feed">${memoryPosts.map((p,i)=>`<div class="post"><div class="name">${p[2]} ${p[0]} <span class="small">• 8m</span></div><p>${p[1]}</p><div class="small">♡ ${12+i*7} &nbsp; 💬 ${2+i%4}</div></div>`).join("")}</div>
+ <p class="tiny">When you're ready, click the button. No peeking back at the feed during the questions!</p>
+ <button class="btn primary" onclick="memoryQuestions()">I'M READY →</button>`;
+}
+const mq=[
+ ["Which post mentioned checking an original source?","Alex",1],
+ ["Which post was about synthetic images?","Casey",1],
+ ["Which post said popularity does NOT prove truth?","Morgan",1],
+ ["Which person posted about learning a trick?","Avery",1],
+ ["Which post was about sleep, learning, and memory?","Jordan",1]
+];
+function memoryQuestions(){
+ let i=0;
+ const memoryRetries={};
+ function render(){
+  if(i>=mq.length){finish();return}
+  const q=mq[i];
+  const options=[q[1],memoryPosts[(i+3)%10][0],memoryPosts[(i+6)%10][0]];
+  document.getElementById("memoryArea").innerHTML=`<div class="question-card"><h3>Memory question ${i+1}/5</h3><p>${q[0]}</p><div class="memory-q">${options.map((o,j)=>`<button class="choice" onclick="memAnswer(${j},'${q[1]}')">${o}</button>`).join("")}</div></div><div id="memfb"></div>`;
+ }
+ window.memAnswer=function(j,ans){
+  const buttons=document.querySelectorAll("#memoryArea .choice");
+  const chosen=buttons[j].textContent;
+  const good=chosen===ans;
+  memoryRetries[i]=memoryRetries[i]||false;
+
+  if(good){
+    award(true,110);
+    document.getElementById("memfb").innerHTML=`
+      <div class="feedback good">
+       <b>👀 You remembered it!</b>
+       <p>The answer was <b>${ans}</b>. People can remember the same feed differently depending on attention, repetition, and what stands out.</p>
+       <button class="btn next" onclick="i++;render()">NEXT →</button>
+      </div>`;
+  } else if(!memoryRetries[i]){
+    memoryRetries[i]=true;
+    document.getElementById("memfb").innerHTML=`
+      <div class="feedback bad">
+       <b>🧠 Not quite — try once more!</b>
+       <p>Think back to the post you saw in the feed. You get one second try.</p>
+       <button class="btn next" onclick="render()">TRY AGAIN →</button>
+      </div>`;
+  } else {
+    award(false,110);
+    document.getElementById("memfb").innerHTML=`
+      <div class="feedback bad">
+       <b>📚 The answer was <b>${ans}</b>.</b>
+       <p>Memory isn't a perfect recording. Attention, distractions, and how information is presented can affect what people remember.</p>
+       <button class="btn next" onclick="i++;render()">NEXT →</button>
+      </div>`;
+  }
+ };
+ render();
+}
+function finish(){
+ show("final");
+ document.getElementById("finalScore").textContent=state.score;
+ document.getElementById("finalCorrect").textContent=state.correct;
+ document.getElementById("finalBlocks").textContent=state.blocks;
+ document.getElementById("finalKeys").textContent=state.keys;
+ let m=state.score>=1700?"Misinformation Detective 🕵️ — you are seriously thinking before you trust or share!":state.score>=1100?"Smart Checker 🔎 — you have a solid verification mindset.":"Still Learning 🧠 — keep practicing the pause, check, and verify habit.";
+ document.getElementById("finalMessage").textContent=m;
+}
+updateStats();
+</script>
+</body>
+</html>
